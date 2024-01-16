@@ -1,6 +1,7 @@
 // Uncomment this block to pass the first stage
 use std::io::prelude::{Read, Write};
 use std::net::{TcpListener, TcpStream};
+use std::thread;
 
 fn main() {
     // You can use print statements as follows for debugging, they'll be visible when running tests.
@@ -11,7 +12,7 @@ fn main() {
     let listener = TcpListener::bind("127.0.0.1:6379").expect("could not connect");
     //
     for stream in listener.incoming() {
-        match stream {
+        thread::spawn(move || match stream {
             Ok(mut _stream) => {
                 println!("accepted new connection");
                 handle_connection(&mut _stream);
@@ -19,7 +20,7 @@ fn main() {
             Err(e) => {
                 println!("error: {}", e);
             }
-        }
+        });
     }
 }
 
@@ -27,12 +28,12 @@ fn handle_connection(stream: &mut TcpStream) {
     loop {
         let mut buffer = [0; 512];
         match stream.read(&mut buffer) {
-            Ok(size) => {
+            Ok(_size) => {
                 let response = "+PONG\r\n";
                 stream.write(response.as_bytes()).unwrap();
                 stream.flush().unwrap();
             }
-            Err(e)=>{
+            Err(_e) => {
                 break;
                 // Respond with multiple pongs for each stream
             }
