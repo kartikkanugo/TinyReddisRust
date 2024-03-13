@@ -1,42 +1,32 @@
 // Uncomment this block to pass the first stage
-use std::io::prelude::{Read, Write};
+use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
-use std::thread;
 
 fn main() {
-    // You can use print statements as follows for debugging, they'll be visible when running tests.
-    println!("Logs from your program will appear here!");
-
-    // Uncomment this block to pass the first stage
-    //
-    let listener = TcpListener::bind("127.0.0.1:6379").expect("could not connect");
-    //
+    println!("Logs will appear here");
+    let listener = TcpListener::bind("127.0.0.1:6379").unwrap();
     for stream in listener.incoming() {
-        thread::spawn(move || match stream {
-            Ok(mut _stream) => {
-                println!("accepted new connection");
-                handle_connection(&mut _stream);
+        match stream {
+            Ok(stream) => {
+                println!("new connection done");
+                handle_connection(stream);
             }
             Err(e) => {
-                println!("error: {}", e);
+                println!("error is {}", e);
             }
-        });
+        }
     }
 }
 
-fn handle_connection(stream: &mut TcpStream) {
+fn handle_connection(mut stream: TcpStream) {
+    let response = "+PONG\r\n";
     loop {
-        let mut buffer = [0; 512];
-        match stream.read(&mut buffer) {
-            Ok(_size) => {
-                let response = "+PONG\r\n";
-                stream.write(response.as_bytes()).unwrap();
-                stream.flush().unwrap();
-            }
-            Err(_e) => {
-                break;
-                // Respond with multiple pongs for each stream
-            }
+        let mut buffer = [0; 1024];
+        let bytesread = stream.read(&mut buffer).expect("failed to read stream");
+        if bytesread == 0 {
+            break;
         }
+
+        stream.write_all(response.as_bytes()).unwrap();
     }
 }
