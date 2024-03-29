@@ -1,37 +1,29 @@
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::net::{TcpListener, TcpStream};
+use tokio::net::TcpListener;
 
 #[tokio::main]
 async fn main() {
-    println!("Logs will appear here");
     let listener = TcpListener::bind("127.0.0.1:6379").await.unwrap();
-
     loop {
-        let (mut socket, _) = listener.accept().await.unwrap();
-        tokio::spawn(async move {
-            println!("In async tokio");
-            if let Err(e) = handle_connection(&mut socket).await {
-                println!("Error handling connection: {}", e);
+        let stream = listener.accept().await;
+        match stream {
+            Ok((mut stream, _)) => {
+                println!("accepted new connection");
+
+                tokio::spawn(async move {
+                    let mut buf = [0; 512];
+                    loop {
+                        let read_count = stream.read(&mut buf).await.unwrap();
+                        if read_count == 0 {
+                            break;
+                        }
+                        stream.write(b"+PONG\r\n").await.unwrap();
+                    }
+                });
             }
-        });
+            Err(e) => {
+                println!("error: {}", e);
+            }
+        }
     }
-}
-
-async fn handle_connection(stream: &mut TcpStream) -> Result<(), Box<dyn std::error::Error>> {
-    let response = "+PONG\r\n";
-    let mut buffer = Vec::with_capacity(1000);
-    println!("in handle connectinos");
-    loop {
-        let bytes_read = stream.read(&mut buffer).await?;
-        println!("bytes read first {}", bytes_read);
-
-        // if bytes_read == 0 {
-        //     break; // End of stream
-        // }
-        println!("bytes read {}", bytes_read);
-
-        stream.write_all(response.as_bytes()).await?; // Write response to the stream
-    }
-
-    Ok(())
 }
