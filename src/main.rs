@@ -9,6 +9,7 @@ async fn main() {
     loop {
         let (mut socket, _) = listener.accept().await.unwrap();
         tokio::spawn(async move {
+            println!("In async tokio");
             if let Err(e) = handle_connection(&mut socket).await {
                 println!("Error handling connection: {}", e);
             }
@@ -27,6 +28,7 @@ async fn handle_connection(stream: &mut TcpStream) -> Result<(), Box<dyn std::er
         if bytes_read == 0 {
             break; // End of stream
         }
+        println!("bytes read {}", bytes_read);
 
         stream.write_all(response.as_bytes()).await?; // Write response to the stream
     }
