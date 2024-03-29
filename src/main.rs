@@ -20,7 +20,7 @@ async fn main() {
 async fn handle_connection(stream: &mut TcpStream) -> Result<(), Box<dyn std::error::Error>> {
     let response = "+PONG\r\n";
     let mut buffer = Vec::with_capacity(1000);
-
+    println!("in handle connectinos");
     loop {
         buffer.clear(); // Clear the buffer before each read operation
         let bytes_read = stream.read(&mut buffer).await?;
