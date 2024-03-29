@@ -1,32 +1,29 @@
 // Uncomment this block to pass the first stage
-use std::io::{Read, Write};
-use std::net::{TcpListener, TcpStream};
+use tokio::net::{TcpListener, TcpStream};
 
-fn main() {
+#[tokio::main]
+async fn main() {
     println!("Logs will appear here");
-    let listener = TcpListener::bind("127.0.0.1:6379").unwrap();
-    for stream in listener.incoming() {
-        match stream {
-            Ok(stream) => {
-                println!("new connection done");
-                handle_connection(stream);
-            }
-            Err(e) => {
-                println!("error is {}", e);
-            }
-        }
+    let listener = TcpListener::bind("127.0.0.1:6379").await.unwrap();
+
+    loop {
+        let (stream, _) = listener.accept().await.unwrap();
+        handle_connection(stream).await;
     }
 }
 
-fn handle_connection(mut stream: TcpStream) {
+async fn handle_connection(stream: TcpStream) {
     let response = "+PONG\r\n";
     loop {
-        let mut buffer = [0; 1024];
-        let bytesread = stream.read(&mut buffer).expect("failed to read stream");
-        if bytesread == 0 {
-            break;
+        if let Ok(()) = stream.readable().await {
+            let mut buffer = Vec::with_capacity(1000);
+            match stream.try_read_buf(&mut buffer) {
+                Ok(0) => break,
+                Ok(_) => {
+                    stream.try_write(response.as_bytes()).unwrap();
+                }
+                Err(_) => return,
+            }
         }
-
-        stream.write_all(response.as_bytes()).unwrap();
     }
 }
