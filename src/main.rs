@@ -14,16 +14,15 @@ async fn main() {
 
 async fn handle_connection(stream: TcpStream) {
     let response = "+PONG\r\n";
-    loop {
-        if let Ok(()) = stream.readable().await {
-            let mut buffer = Vec::with_capacity(1000);
-            match stream.try_read_buf(&mut buffer) {
-                Ok(0) => break,
-                Ok(_) => {
-                    stream.try_write(response.as_bytes()).unwrap();
-                }
-                Err(_) => return,
+    let mut buffer = Vec::with_capacity(1000);
+
+    if let Ok(()) = stream.readable().await {
+        match stream.try_read_buf(&mut buffer) {
+            Ok(0) => return,
+            Ok(_) => {
+                stream.try_write(response.as_bytes()).unwrap();
             }
+            Err(_) => return,
         }
     }
 }
