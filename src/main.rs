@@ -8,7 +8,9 @@ async fn main() {
 
     loop {
         let (stream, _) = listener.accept().await.unwrap();
-        handle_connection(stream).await;
+        tokio::spawn(async move {
+            handle_connection(stream).await;
+        });
     }
 }
 
@@ -16,13 +18,18 @@ async fn handle_connection(stream: TcpStream) {
     let response = "+PONG\r\n";
     let mut buffer = Vec::with_capacity(1000);
 
-    if let Ok(()) = stream.readable().await {
-        match stream.try_read_buf(&mut buffer) {
-            Ok(0) => return,
-            Ok(_) => {
-                stream.try_write(response.as_bytes()).unwrap();
+    loop {
+        if let Ok(()) = stream.readable().await {
+            match stream.try_read_buf(&mut buffer) {
+                Ok(0) => break,
+                Ok(_) => {
+                    stream.try_write(response.as_bytes()).unwrap();
+                }
+                Err(e) => {
+                    println!("error: {}", e);
+                    return;
+                }
             }
-            Err(_) => return,
         }
     }
 }
