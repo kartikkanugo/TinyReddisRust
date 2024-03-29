@@ -31,11 +31,10 @@ async fn handle_connection(mut stream: TcpStream) {
 
     loop {
         buffer.clear();
-        match stream.read(&mut buffer).await.unwrap() {
-            0 => break,
-            _ => {
-                stream.write_all(response.as_bytes()).await.unwrap();
-            }
+        let bytesread = stream.read(&mut buffer).await.unwrap();
+        if bytesread == 0 {
+            break;
         }
+        stream.write_all(response.as_bytes()).await.unwrap();
     }
 }
