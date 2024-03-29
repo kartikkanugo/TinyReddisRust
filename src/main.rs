@@ -10,6 +10,7 @@ async fn main() {
         let socket = listener.accept().await;
         match socket {
             Ok((stream, _)) => {
+                println!("accepted a new connection");
                 tokio::spawn(async move {
                     handle_connection(stream).await;
                 });
@@ -27,13 +28,13 @@ async fn handle_connection(stream: TcpStream) {
 
     loop {
         if let Ok(()) = stream.readable().await {
-            match stream.try_read_buf(&mut buffer) {
+            match stream.try_read(&mut buffer) {
                 Ok(0) => break,
                 Ok(_) => {
                     stream.try_write(response.as_bytes()).unwrap();
                 }
                 Err(e) => {
-                    println!("error: {}", e);
+                    println!("handle connection error: {}", e);
                     return;
                 }
             }
