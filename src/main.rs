@@ -1,5 +1,5 @@
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::net::TcpListener;
+use tokio::net::{TcpListener, TcpStream};
 
 #[tokio::main]
 async fn main() {
@@ -7,18 +7,16 @@ async fn main() {
     let listener = TcpListener::bind("127.0.0.1:6379").await.unwrap();
 
     loop {
-        let (socket, _) = listener.accept().await.unwrap();
+        let (mut socket, _) = listener.accept().await.unwrap();
         tokio::spawn(async move {
-            if let Err(e) = handle_connection(socket).await {
+            if let Err(e) = handle_connection(&mut socket).await {
                 println!("Error handling connection: {}", e);
             }
         });
     }
 }
 
-async fn handle_connection(
-    mut stream: tokio::net::TcpStream,
-) -> Result<(), Box<dyn std::error::Error>> {
+async fn handle_connection(stream: &mut TcpStream) -> Result<(), Box<dyn std::error::Error>> {
     let response = "+PONG\r\n";
     let mut buffer = Vec::with_capacity(1000);
 
