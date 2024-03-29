@@ -27,16 +27,14 @@ async fn handle_connection(stream: TcpStream) {
     let mut buffer = Vec::with_capacity(1000);
 
     loop {
-        if let Ok(()) = stream.readable().await {
-            match stream.try_read(&mut buffer) {
-                Ok(0) => break,
-                Ok(_) => {
-                    stream.try_write(response.as_bytes()).unwrap();
-                }
-                Err(e) => {
-                    println!("handle connection error: {}", e);
-                    return;
-                }
+        match stream.try_read(&mut buffer) {
+            Ok(0) => break,
+            Ok(_) => {
+                stream.try_write(response.as_bytes()).unwrap();
+            }
+            Err(e) => {
+                println!("handle connection error: {}", e);
+                return;
             }
         }
     }
