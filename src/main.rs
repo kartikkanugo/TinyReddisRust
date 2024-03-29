@@ -1,5 +1,8 @@
 // Uncomment this block to pass the first stage
-use tokio::net::{TcpListener, TcpStream};
+use tokio::{
+    io::{AsyncReadExt, AsyncWriteExt},
+    net::{TcpListener, TcpStream},
+};
 
 #[tokio::main]
 async fn main() {
@@ -22,19 +25,16 @@ async fn main() {
     }
 }
 
-async fn handle_connection(stream: TcpStream) {
+async fn handle_connection(mut stream: TcpStream) {
     let response = "+PONG\r\n";
     let mut buffer = Vec::with_capacity(1000);
 
     loop {
-        match stream.try_read(&mut buffer) {
-            Ok(0) => break,
-            Ok(_) => {
-                stream.try_write(response.as_bytes()).unwrap();
-            }
-            Err(e) => {
-                println!("handle connection error: {}", e);
-                return;
+        buffer.clear();
+        match stream.read(&mut buffer).await.unwrap() {
+            0 => break,
+            _ => {
+                stream.write_all(response.as_bytes()).await.unwrap();
             }
         }
     }
